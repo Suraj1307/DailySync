@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
@@ -14,10 +15,11 @@ const startCronJobs = require("./cron/scheduler");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
+const frontendDistPath = path.join(__dirname, "..", "frontend", "dist");
 
 app.use(
   cors({
-    origin: env.clientUrl,
+    origin: env.nodeEnv === "production" ? true : env.clientUrl,
     credentials: true
   })
 );
@@ -46,6 +48,18 @@ app.use("/api/task", taskRoutes);
 app.use("/api/telegram", telegramRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/cron", cronRoutes);
+
+if (env.nodeEnv === "production") {
+  app.use(express.static(frontendDistPath));
+
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) {
+      return next();
+    }
+
+    return res.sendFile(path.join(frontendDistPath, "index.html"));
+  });
+}
 
 app.use(notFound);
 app.use(errorHandler);
