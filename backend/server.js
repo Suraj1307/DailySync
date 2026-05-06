@@ -1,3 +1,4 @@
+const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
@@ -16,6 +17,8 @@ const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
 const frontendDistPath = path.join(__dirname, "..", "frontend", "dist");
+const frontendIndexPath = path.join(frontendDistPath, "index.html");
+const hasBuiltFrontend = fs.existsSync(frontendIndexPath);
 
 app.use(
   cors({
@@ -49,7 +52,7 @@ app.use("/api/telegram", telegramRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/cron", cronRoutes);
 
-if (env.nodeEnv === "production") {
+if (hasBuiltFrontend) {
   app.use(express.static(frontendDistPath));
 
   app.get("*", (req, res, next) => {
